@@ -103,7 +103,7 @@ namespace SiGyl.HubChain
 				{
 					o.OnCompleted();
 					var t = Task.Run(async () =>
-						await Proxy.Invoke<IEnumerable<T>>("Leave", new List<Item<T>> { item }));
+						await Proxy.Invoke<IEnumerable<T>>("UnsubscribeItem", new List<Item<T>> { item }));
 					onDispose(subscription);
 
 				};
