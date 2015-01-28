@@ -1,12 +1,10 @@
 ﻿#Hub-Chain
 
-A signalR hub manages an observable sequence for every group across connections
+A collection of 'endpoints' that can be subscribed to by signalr clients.
 
-Connections can subscribe (join) and unsubscribe (leave) from groups.
-When all the connections have unsubscribed from a group (or disconnected) the source observable sequence is disposed.
+The server they subscribe to is either the data source or it is chained to it.  
+If it is chained to the source it subscribes to the endoint on the source and maintains a cache of the latest value.
+All servers can be on redis or the server will relay published items too.
 
-Hubs will be scaled out using redis.
-
-* If it has a chainhub it will subscribe to its chainhub for the values and not publish them.
-* If it hasn't got a chain hub it will provide the source observable and publish it.
-
+Subscribing to an endpoint creates a published observable on the server.  
+This can have multiple subscriptions and is removed on disposal.
