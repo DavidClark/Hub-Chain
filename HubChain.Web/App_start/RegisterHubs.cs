@@ -25,33 +25,36 @@ namespace newhubs.App_start
 
 			if (ConfigurationManager.AppSettings["chainHub"] != null)
 			{
-				Tags<int>.TagProvider = new ChainTagProvider<int>
+				DataSource<int>.DataProvider = new ChainTagProvider<int>
 				{
-					HubName = "NewHub",
+					HubName = "SuperBatch",
 					JoinMethodName = "SubscribeItem",
 					LeaveMethodName = "UnsubscribeItem",
+					UpdateMethodName="UpdateItem",
 					HubConnection = new HubConnection(ConfigurationManager.AppSettings["chainHub"])
 
 				};
 			}
 			else
-				Tags<int>.TagProvider = new SourceTagProvider();
+				DataSource<int>.DataProvider = new SourceTagProvider();
 
 			if (ConfigurationManager.AppSettings["redis"] == null || ConfigurationManager.AppSettings["chainHub"] == null)
 			{
-				Tags<int>.Updater = (group, item) =>
+				DataSource<int>.Updater = (group, item) =>
 					Task.Run(async () =>
-						await GlobalHost.ConnectionManager.GetHubContext<MyHub>().Clients.Group(group).Update(item)
+						await GlobalHost.ConnectionManager.GetHubContext<MyHub>().Clients.Group(group).UpdateItem(item)
 					);
 			}
+
+
 			app.Map("/signalr", map =>
 			{
-				var redis = WebConfigurationManager.AppSettings["redis"];
-				if (redis != null)
+				var redis  = WebConfigurationManager.AppSettings["redis"];
+				if(redis!=null)
 					GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
+				
 
-
-				// GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
+			   // GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
 				// Setup the CORS middleware to run before SignalR.
 				// By default this will allow all origins. You can 
 				// configure the set of origins and/or http verbs by
@@ -68,13 +71,13 @@ namespace newhubs.App_start
 				// since this branch already runs under the "/signalr"
 				// path.
 				map.RunSignalR(hubConfiguration);
-			});
+});
 
-
-			//		app.MapSignalR();
+		   
+	//		app.MapSignalR();
 
 			// Register the default hubs route: ~/signalr/hubs
-			// RouteTable.Routes.MapHubs();
+		   // RouteTable.Routes.MapHubs();
 		}
 	}
 }

@@ -7,7 +7,7 @@ using System.Web;
 
 namespace SiGyl.HubChain
 {
-	public class SourceTagProvider : ITagProvider<int>
+	public class SourceTagProvider : IDataProvider<int>
 	{
 		static Random _Random = new Random();
 		public IObservable<Item<int>> GetObservable(Item<int> item, Action<IDisposable> onDispose)

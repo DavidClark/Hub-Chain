@@ -17,7 +17,7 @@ using System.Web;
 namespace newhubs.code
 {
 
-	[HubName("NewHub")]
+	[HubName("SuperBatch")]
 	public class MyHub : Hub
 	{
 		public MyHub()
@@ -28,21 +28,21 @@ namespace newhubs.code
 
 		public async Task<IEnumerable<Item<int>>> SubscribeItem(IEnumerable<Item<int>> items)
 		{
-			var ret = await Tags<int>.Join(items, Context.ConnectionId, async (group) => await Groups.Add(Context.ConnectionId, group));
-			return ret;
+			return await DataSource<int>.Join(items, Context.ConnectionId, async (group) => await Groups.Add(Context.ConnectionId, group));
+			
 		}
 
 
 
 		public async Task UnsubscribeItem(IEnumerable<Item<int>> items)
 		{
-			await Tags<int>.Leave(items, Context.ConnectionId, async (group) => await Groups.Remove(Context.ConnectionId, group));
+			await DataSource<int>.Leave(items, Context.ConnectionId, async (group) => await Groups.Remove(Context.ConnectionId, group));
 		}
 
 
 		public override Task OnDisconnected(bool stopCalled)
 		{
-			Tags<int>.OnDisconnected(stopCalled, Context.ConnectionId);
+			DataSource<int>.OnDisconnected(stopCalled, Context.ConnectionId);
 			return base.OnDisconnected(stopCalled);
 		}
 

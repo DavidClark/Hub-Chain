@@ -6,7 +6,7 @@ using System.Web;
 
 namespace SiGyl.HubChain
 {
-	public interface ITagProvider<T>
+	public interface IDataProvider<T>
 	{
 		IObservable<Item<T>> GetObservable(Item<T> item, Action<IDisposable> onDispose);
 		Task<IEnumerable<Item<T>>> Subscribe(IEnumerable<Item<T>> groups);

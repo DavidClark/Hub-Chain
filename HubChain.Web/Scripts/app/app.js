@@ -26,7 +26,7 @@
   require(["jquery", "linq", "sigr", "knockout", "knockout.punches"], function($, linq, signalr, ko) {
     var count, crossConnection, crossProxy, join, leave, starter, toggleJoin, toggleLeave, update, viewModel;
     crossConnection = $.hubConnection("/signalr");
-    crossProxy = crossConnection.createHubProxy("newHub");
+    crossProxy = crossConnection.createHubProxy("SuperBatch");
     viewModel = {
       values: {},
       latest: ko.observableArray()
@@ -39,7 +39,7 @@
         return viewModel.values[message.Id].exception(message.Exception);
       }
     };
-    crossProxy.on("Update", function(message) {
+    crossProxy.on("UpdateItem", function(message) {
       return update(message);
     });
     starter = crossConnection.start();

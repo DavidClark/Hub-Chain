@@ -26,7 +26,7 @@ require [
 	"knockout.punches"
 ],($,linq,signalr,ko)->
 	crossConnection = $.hubConnection "/signalr"
-	crossProxy =  crossConnection.createHubProxy "newHub"
+	crossProxy =  crossConnection.createHubProxy "SuperBatch"
 	#register a method to ensure onconnected + onDisconnected work on the server
 	viewModel = 
 		values:{}
@@ -39,7 +39,7 @@ require [
 			viewModel.values[message.Id].exception message.Exception
 
 
-	crossProxy.on "Update", (message)->
+	crossProxy.on "UpdateItem", (message)->
 		update message
 
 		#alert message

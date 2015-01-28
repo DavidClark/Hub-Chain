@@ -9,7 +9,7 @@ using System.Web;
 
 namespace SiGyl.HubChain
 {
-	public class ChainTagProvider<T> : ITagProvider<T>
+	public class ChainTagProvider<T> : IDataProvider<T>
 	{
 		IHubProxy Proxy;
 		IDisposable PermanentSubscription;
@@ -23,7 +23,7 @@ namespace SiGyl.HubChain
 				Func<Task> start = null;
 				Proxy = HubConnection.CreateHubProxy(HubName);
 				Proxy.On("dummy", () => { });
-				Proxy.On<Item<T>>("Update", i =>
+				Proxy.On<Item<T>>(UpdateMethodName, i =>
 				{
 					o.OnNext(i);
 				}
@@ -43,7 +43,16 @@ namespace SiGyl.HubChain
 						if (st.NewState == ConnectionState.Connected)
 						{
 							started = true;
-							var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async ttt => await Proxy.Invoke<IEnumerable<int>>("Join", Tags<int>.observables.Keys)));
+							var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async ttt => 
+								
+								
+								{
+									//fix me!!
+									var results = await Proxy.Invoke<IEnumerable<Item<T>>>(JoinMethodName, DataSource<T>.observables.Keys.Select(k=>new {Id=k}));
+									foreach (var r in results)
+										o.OnNext(r);
+								}
+							));
 						}
 					}
 
@@ -91,12 +100,13 @@ namespace SiGyl.HubChain
 		public string HubName { get; set; }
 		public string JoinMethodName { get; set; }
 		public string LeaveMethodName { get; set; }
+		public string UpdateMethodName { get; set; }
 		public HubConnection HubConnection { get; set; }
 		public IObservable<Item<T>> GetObservable(Item<T> item, Action<IDisposable> onDispose)
 		{
 
 
-			return Observable.Create<Item<T>>(o =>
+			return Observable.Create<Item<T>>(async o =>
 			{
 				if (Initialiser.Value)
 				{
@@ -106,13 +116,19 @@ namespace SiGyl.HubChain
 						return
 							x.Id == item.Id;
 					}).Subscribe(x => o.OnNext(x));
-
+					try
+					{
+						var i = await Proxy.Invoke<IEnumerable<Item<T>>>(JoinMethodName, new List<Item<T>>() { item });
+						if (i.Any())
+							o.OnNext(i.First());
+					}
+					catch { }
 
 					return () =>
 					{
 						o.OnCompleted();
 						var t = Task.Run(async () =>
-							await Proxy.Invoke<IEnumerable<T>>("UnsubscribeItem", new List<Item<T>> { item }));
+							await Proxy.Invoke<IEnumerable<T>>(LeaveMethodName, new List<Item<T>> { item }));
 						onDispose(subscription);
 
 					};
@@ -126,7 +142,10 @@ namespace SiGyl.HubChain
 
 		public async Task<IEnumerable<Item<T>>> Subscribe(IEnumerable<Item<T>> items)
 		{
-			return await Proxy.Invoke<IEnumerable<Item<T>>>("SubscribeItem", items);
+			return await Proxy.Invoke<IEnumerable<Item<T>>>(JoinMethodName, items);
+
+			//return Task.FromResult((IEnumerable<Item<T>>)new List<Item<T>>());
+			
 		}
 	}
 
