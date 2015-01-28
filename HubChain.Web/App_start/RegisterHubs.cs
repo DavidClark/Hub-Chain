@@ -25,8 +25,14 @@ namespace newhubs.App_start
 
 			if (ConfigurationManager.AppSettings["chainHub"] != null)
 			{
-				ChainTagProvider<int>.HubConnection = () => new HubConnection(ConfigurationManager.AppSettings["chainHub"]);
-				Tags<int>.TagProvider = new ChainTagProvider<int>();
+				Tags<int>.TagProvider = new ChainTagProvider<int>
+				{
+					HubName = "NewHub",
+					JoinMethodName = "SubscribeItem",
+					LeaveMethodName = "UnsubscribeItem",
+					HubConnection = new HubConnection(ConfigurationManager.AppSettings["chainHub"])
+
+				};
 			}
 			else
 				Tags<int>.TagProvider = new SourceTagProvider();
@@ -40,12 +46,12 @@ namespace newhubs.App_start
 			}
 			app.Map("/signalr", map =>
 			{
-				var redis  = WebConfigurationManager.AppSettings["redis"];
-				if(redis!=null)
+				var redis = WebConfigurationManager.AppSettings["redis"];
+				if (redis != null)
 					GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
-				
 
-			   // GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
+
+				// GlobalHost.DependencyResolver.UseRedis(redis.Split(':')[0], int.Parse(redis.Split(':')[1]), "", "BatchScada");
 				// Setup the CORS middleware to run before SignalR.
 				// By default this will allow all origins. You can 
 				// configure the set of origins and/or http verbs by
@@ -62,13 +68,13 @@ namespace newhubs.App_start
 				// since this branch already runs under the "/signalr"
 				// path.
 				map.RunSignalR(hubConfiguration);
-});
+			});
 
-		   
-	//		app.MapSignalR();
+
+			//		app.MapSignalR();
 
 			// Register the default hubs route: ~/signalr/hubs
-		   // RouteTable.Routes.MapHubs();
+			// RouteTable.Routes.MapHubs();
 		}
 	}
 }

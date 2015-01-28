@@ -11,102 +11,113 @@ namespace SiGyl.HubChain
 {
 	public class ChainTagProvider<T> : ITagProvider<T>
 	{
-		public static Func< HubConnection> HubConnection;
-		static IHubProxy Proxy;
-		static IDisposable PermanentSubscription;
-		static IObservable<Item<T>> Connector = Observable.Create<Item<T>>(async o =>
+		IHubProxy Proxy;
+		IDisposable PermanentSubscription;
+		IObservable<Item<T>> Connector;
+		public ChainTagProvider()
 		{
+			Connector = Observable.Create<Item<T>>(async o =>
+			{
 
-			var started = false;
-			Func<Task> start = null;
-			HubConnection hubConnection = HubConnection();
-			Proxy = hubConnection.CreateHubProxy("NewHub");
-			Proxy.On("dummy", () => { });
-			Proxy.On<Item<T>>("Update", i =>
-			{
-				o.OnNext(i);
-			}
-			);
-			hubConnection.StateChanged += (st) =>
-			{
-				lock (hubConnection)
+				var started = false;
+				Func<Task> start = null;
+				Proxy = HubConnection.CreateHubProxy(HubName);
+				Proxy.On("dummy", () => { });
+				Proxy.On<Item<T>>("Update", i =>
 				{
-					if (st.NewState == ConnectionState.Disconnected)
-					{
-						if (started)
-						{
-							started = false;
-							var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async tt => await start()));
-						}
-					}
-					if (st.NewState == ConnectionState.Connected)
-					{
-						started = true;
-						var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async ttt => await Proxy.Invoke<IEnumerable<int>>("Join", Tags<int>.observables.Keys)));
-					}
+					o.OnNext(i);
 				}
-
-			};
-
-			start =
-				async () =>
+				);
+				HubConnection.StateChanged += (st) =>
 				{
-					int delay = 1000;
-					while (!started)
+					lock (HubConnection)
 					{
-						try
+						if (st.NewState == ConnectionState.Disconnected)
 						{
-							System.Diagnostics.Debug.WriteLine("Starting hub connection");
-							await hubConnection.Start();
+							if (started)
+							{
+								started = false;
+								var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async tt => await start()));
+							}
+						}
+						if (st.NewState == ConnectionState.Connected)
+						{
 							started = true;
-						}
-						catch
-						{
-							System.Diagnostics.Debug.WriteLine("Hub conection start failed");
-							hubConnection.Stop();
-						}
-
-						if (!started)
-						{
-							if (delay < 5000)
-								delay += 1000;
-							await Task.Delay(5000);
+							var t = Task.Run(async () => await Task.Delay(1000).ContinueWith(async ttt => await Proxy.Invoke<IEnumerable<int>>("Join", Tags<int>.observables.Keys)));
 						}
 					}
+
 				};
 
-			await start();
-			return () => { };
-		}).Publish().RefCount();
+				start =
+					async () =>
+					{
+						int delay = 1000;
+						while (!started)
+						{
+							try
+							{
+								System.Diagnostics.Debug.WriteLine("Starting hub connection");
+								await HubConnection.Start();
+								System.Diagnostics.Debug.WriteLine("Started hub connection");
+								started = true;
+							}
+							catch
+							{
+								System.Diagnostics.Debug.WriteLine("Hub conection start failed");
+								HubConnection.Stop();
+							}
 
-		static Lazy<bool> LazyInit = new Lazy<bool>(() =>
-		{
-			
+							if (!started)
+							{
+								if (delay < 5000)
+									delay += 1000;
+								await Task.Delay(5000);
+							}
+						}
+					};
+
+				await start();
+				return () => { };
+			}).Publish().RefCount();
+			Initialiser = new Lazy<bool>(() =>
+			{
 				if (PermanentSubscription == null)
 					PermanentSubscription = Connector.Subscribe();
-
-			return true;
-
-		});
-
-
+				return true;
+			});
+		}
+		Lazy<bool> Initialiser;
+		public string HubName { get; set; }
+		public string JoinMethodName { get; set; }
+		public string LeaveMethodName { get; set; }
+		public HubConnection HubConnection { get; set; }
 		public IObservable<Item<T>> GetObservable(Item<T> item, Action<IDisposable> onDispose)
 		{
-			var vv = LazyInit.Value;
+
 
 			return Observable.Create<Item<T>>(o =>
 			{
-				//o.OnNext(-4);
-				var subscription = Connector.Where(x => x.Id == item.Id).Subscribe(x => o.OnNext(x));
-
-				return () =>
+				if (Initialiser.Value)
 				{
-					o.OnCompleted();
-					var t = Task.Run(async () =>
-						await Proxy.Invoke<IEnumerable<T>>("UnsubscribeItem", new List<Item<T>> { item }));
-					onDispose(subscription);
+					//o.OnNext(-4);
+					var subscription = Connector.Where(x =>
+					{
+						return
+							x.Id == item.Id;
+					}).Subscribe(x => o.OnNext(x));
 
-				};
+
+					return () =>
+					{
+						o.OnCompleted();
+						var t = Task.Run(async () =>
+							await Proxy.Invoke<IEnumerable<T>>("UnsubscribeItem", new List<Item<T>> { item }));
+						onDispose(subscription);
+
+					};
+				}
+				return () => { };
 			}
 				).Publish().RefCount();
 		}
