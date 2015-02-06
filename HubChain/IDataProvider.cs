@@ -10,5 +10,9 @@ namespace SiGyl.HubChain
 	{
 		IObservable<Item<T>> GetObservable(Item<T> item, Action<IDisposable> onDispose);
 		Task<IEnumerable<Item<T>>> Subscribe(IEnumerable<Item<T>> groups);
+
+        IObservable<IEnumerable<Item<T>>> Get(IEnumerable<Item<T>> items);
+        IObservable<IEnumerable<Item<T>>> Put(IEnumerable<Item<T>> items);
+
 	}
 }

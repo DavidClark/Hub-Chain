@@ -33,6 +33,17 @@ namespace SiGyl.HubChain
 		{
 			return Task.FromResult((IEnumerable<Item<int>>)new List<Item<int>>());
 		}
-	}
+
+
+        public IObservable<IEnumerable<Item<int>>> Get(IEnumerable<Item<int>> items)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<IEnumerable<Item<int>>> Put(IEnumerable<Item<int>> items)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 }

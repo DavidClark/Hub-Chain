@@ -21,10 +21,27 @@ namespace SiGyl.HubChain
 		public static ConcurrentDictionary<string, IObservable<Item<T>>> observables = new ConcurrentDictionary<string, IObservable<Item<T>>>();
 		static Random _Random = new Random();
 		static ConcurrentDictionary<string, IObservable<Item<T>>> _tags = new ConcurrentDictionary<string, IObservable<Item<T>>>();
-		public static IObservable<Item<T>> GetObservable(Item<T> item)
+		
+        
+        public static IObservable<IEnumerable<Item<T>>> Get(IEnumerable<Item<T>> items)
+        {
+            return DataProvider.Get(items).Take(1);
+        }
+
+        public static IObservable<IEnumerable<Item<T>>> Put(IEnumerable<Item<T>> items)
+        {
+            return DataProvider.Put(items).Take(1);
+        }
+        
+        
+        
+        
+        public static IObservable<Item<T>> GetObservable(Item<T> item)
 		{
 			var toRet = DataSource<T>.observables.GetOrAdd(item.Id, (g) =>
 			{
+                Item<T> removed;
+                values.TryRemove(item.Id, out removed);
 				return create(item)
 				.Do((d) =>
 				{
@@ -50,7 +67,7 @@ namespace SiGyl.HubChain
 		{
 			return Observable.Create<Item<T>>(o =>
 			{
-
+                
 				var tt = Observable.Return(new Item<T> { Id = item.Id, Index = -998 })
 					.Concat(
 						_tags.GetOrAdd(item.Id, DataProvider.GetObservable(

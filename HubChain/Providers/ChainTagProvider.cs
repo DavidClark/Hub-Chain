@@ -147,7 +147,18 @@ namespace SiGyl.HubChain
 			//return Task.FromResult((IEnumerable<Item<T>>)new List<Item<T>>());
 			
 		}
-	}
+
+
+        public IObservable<IEnumerable<Item<T>>> Get(IEnumerable<Item<T>> items)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IObservable<IEnumerable<Item<T>>> Put(IEnumerable<Item<T>> items)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 
 }
